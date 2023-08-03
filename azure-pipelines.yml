@@ -1,19 +1,24 @@
-# Starter pipeline
-# Start with a minimal pipeline that you can customize to build and deploy your code.
-# Add steps that build, run tests, deploy, and more:
-# https://aka.ms/yaml
-
 trigger:
-- master
-- test
+  branches:
+    include:
+      - master
+      - test
 
-pool: 'TolgaLocal' 
+variables:
+  JIT_API_KEY: $(JitApiKey)  # Jit.io API anahtarını buraya gizli değişken olarak tanımlayın
+
+pool: TolgaLocal
 
 steps:
 - script: echo Hello, world!
-  displayName: 'Run a one-line script'
+  displayName: 'hello'
 
 - script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+    echo "Jit.io taraması başlatılıyor..."
+    curl -X POST -H "Authorization: Bearer $JIT_API_KEY" -H "Content-Type: application/json" -d "{\"project\": \"json-server\", \"repo\": \"than57\", \"branch\": \"master\"}" "https://api.jit.io/scan"
+  displayName: 'Jit.io Taramasını Başlat'
+
+- script: |
+    echo "Jit.io taraması sonuçları alınıyor..."
+    curl -X GET -H "Authorization: Bearer $JIT_API_KEY" "https://api.jit.io/results?project=json-server&repo=than57&branch=master"
+  displayName: 'Jit.io Tarama Sonuçlarını Al'

@@ -1,6 +1,6 @@
 applications:
-- api_domain: rapidaip.com
-  application_name: Lecto-Api-exam1
+- api_domain: nexus.mobven.com
+  application_name: exam-api
   authentication_mode: non-authenticated
   exclude_paths: []
   target_url: .jit/swagger.yaml

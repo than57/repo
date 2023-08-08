@@ -1,0 +1,585 @@
+basePath: /
+consumes:
+  - application/json
+  - application/x-www-form-urlencoded
+definitions:
+  account_info:
+    description: Shows account information
+    properties:
+      current_period_end:
+        description: UTC Timestamp when current subscription will end (RFC 3339)
+        example: "2022-03-03T03:24:36Z"
+        type: string
+      current_period_start:
+        description: UTC Timestamp when current subscription started (RFC 3339)
+        example: "2022-02-03T03:24:36Z"
+        type: string
+      plan:
+        description: Name of currently subscribed plan
+        example: BUSINESS
+        type: string
+      plan_status:
+        description: Subscription status of current plan
+        example: active
+        type: string
+      usage:
+        description: Usage for current subscription period, i.e. number of translated characters
+        example: 193729227
+        format: uint32
+        type: integer
+      usage_limit:
+        description: Usage limit for current subscription period after which overage pricing will apply
+        example: 750000000
+        format: uint32
+        type: integer
+    type: object
+  error:
+    description: error presents details of error responses
+    properties:
+      details:
+        additionalProperties:
+          type: string
+        description: 'error message details. e.g.  {"from":"valid","to":"valid","text":"invalid source text. Less than 1 character or more than 5000 characters are not allowed. Characters sent: 0","message":"invalid input in request"}'
+        type: object
+      status:
+        description: 'HTTP response status code. Possible error status codes: 400 - Bad Request; 401 - Unauthorized; 404 - Not Found; 429 - Too Many Requests; 500, 502, 503, 504 - Server Errors'
+        example: 400
+        format: int32
+        type: integer
+    type: object
+  json_post_request:
+    description: json_post_request represents a POST request body sent for JSON data payload translation
+    properties:
+      from:
+        description: Source language code to translate from. Source Language code is required for JSON payload translations.
+        example: en
+        type: string
+      json:
+        description: |-
+          Original JSON formatted string to translate from.
+          Use the `JSON.stringify` Javascript method or similar to generate this JSON formatted string from your source JSON payload.
+        example: '{"team":{"name":"Los Angeles Lakers","players":["LeBron James","Andre Drummond"],"player_ages":{"LeBron James":36,"Andre Drummond":28},"player_summary":{"LeBron James":"Widely considered one of the greatest NBA players in history.","Andre Drummond":"A two-time NBA All-Star, he has led the league in rebounding four times and also been named to the All-NBA Third Team."}}}'
+        type: string
+      protected_keys:
+        description: Array of JSON Keys for which translation is to be skipped.
+        example:
+          - team.name
+          - team.players
+        items:
+          type: string
+        type: array
+      to:
+        description: Array of target language codes to translate into.
+        example:
+          - de
+          - es
+        items:
+          type: string
+        type: array
+    required:
+      - json
+      - to
+      - from
+    type: object
+  json_response:
+    description: json_response presents successful json translation results
+    properties:
+      from:
+        description: Source language code translated from.
+        example: en
+        type: string
+      protected_keys:
+        description: Array of JSON Keys for which translation was skipped.
+        example:
+          - team.name
+          - team.players
+        items:
+          type: string
+        type: array
+      translated_characters:
+        description: Number of characters translated. Characters = character count of original json payload (including any spaces or special characters) * number of target languages. The entire JSON request payload is counted, including json keys.
+        example: 373
+        format: uint32
+        type: integer
+      translations:
+        description: Array of translations in different target language codes. Each translation array entry contains a `translated` array which contains the actual translation.
+        items:
+          $ref: '#/definitions/json_translation_list'
+        type: array
+    type: object
+  json_translation_list:
+    description: json_translation_list presents a list of translated json payloads for a given target language code
+    properties:
+      to:
+        description: Target language code for translations
+        example: es
+        type: string
+      translated:
+        description: Array of translated json payloads
+        example:
+          - '{"team":{"name":"Los Angeles Lakers","players":["LeBron James","Andre Drummond"],"player_ages":{"LeBron James":36,"Andre Drummond":28},"player_summary":{"LeBron James":"Considerado uno de los mejores jugadores de la NBA en la historia.","Andre Drummond":"Un All-Star de la NBA dos veces, ha liderado la liga en rebotes cuatro veces y tambiÃ©n ha sido nombrado para el tercer equipo de la All-NBA."}}}'
+        items:
+          type: string
+        type: array
+    type: object
+  supported_language:
+    description: individual supported language
+    properties:
+      display_name:
+        description: Human readable language name in English.
+        example: German
+        type: string
+      language_code:
+        description: Supported language code, usually in `ISO 639-1` format, for example, `de`, `en`. May use `ISO-639-2` or `BCP-47` codes in some cases, for example, `zh-CN` and `zh-TW`.
+        example: de
+        type: string
+      support_source:
+        description: Can be used as a source language.
+        example: true
+        type: boolean
+      support_target:
+        description: Can be used as a target language.
+        example: true
+        type: boolean
+    type: object
+  supported_languages:
+    description: list of languages supported for translation
+    properties:
+      languages:
+        description: List of supported languages
+        items:
+          $ref: '#/definitions/supported_language'
+        type: array
+    type: object
+  text_detect_request:
+    description: text_detect_request represents a POST request body sent for language detection
+    properties:
+      texts:
+        description: Array of original texts to detect languages for.
+        example:
+          - Hello World
+          - Hallo Welt
+        items:
+          type: string
+        type: array
+    required:
+      - texts
+    type: object
+  text_detect_response:
+    description: text_detect_response presents successful text language detection results
+    properties:
+      detected_languages:
+        description: |-
+          Array of the most probable language detected for each original text.
+          Order of the array is the same as the order of the original texts.
+        example:
+          - en
+          - de
+        items:
+          type: string
+        type: array
+      original_characters:
+        description: Number of characters sent for language detection.
+        example: 10
+        format: uint32
+        type: integer
+    type: object
+  text_post_request:
+    description: text_post_request represents a POST request body sent for text translation
+    properties:
+      from:
+        description: Optional source language. Auto-detected if absent.
+        example: en
+        type: string
+      texts:
+        description: Array of original texts to translate.
+        example:
+          - Hello World
+          - Good Morning
+        items:
+          type: string
+        type: array
+      to:
+        description: Array of target language codes to translate into.
+        example:
+          - de
+          - es
+        items:
+          type: string
+        type: array
+    required:
+      - texts
+      - to
+    type: object
+  text_response:
+    description: text_response presents successful text translation results
+    properties:
+      from:
+        description: Source language code if provided. Else, the source language code is auto-detected and mentioned as `auto` here.
+        example: en
+        type: string
+      translated_characters:
+        description: Number of characters translated. Characters = character count of original text * number of target languages
+        example: 20
+        format: uint32
+        type: integer
+      translations:
+        description: Array of translations in different target language codes. Each translation array entry contains a `translated` array which contains the list of all translated texts in the same order as the `original` texts array.
+        items:
+          $ref: '#/definitions/translation_list'
+        type: array
+    type: object
+  translation_list:
+    description: translation_list presents a list of translated texts for a given target language code
+    properties:
+      to:
+        description: Target language code for translations in this list.
+        example: de
+        type: string
+      translated:
+        description: Array of translated texts for a given target language code.
+        example:
+          - Hallo Welt
+          - Guten Morgen
+        items:
+          type: string
+        type: array
+    type: object
+host: api.lecto.ai
+info:
+  description: |-
+    [Lecto Translation API](https://dashboard.lecto.ai/signin?utm_source=docs&utm_medium=website&utm_campaign=developer-outreach) provides API endpoints for translation between 90+ source and target language pairs with multiple target languages supported in the same request.
+
+    ## Authentication
+
+    This API uses either a custom API Key or the RapidAPI API Key for authentication.
+
+    ### Custom API Key
+
+    A custom API Key provided to you by the developer must be sent as the value of the header `X-API-Key`. Contact us at [support@rapidapi.com](mailto:support@rapidapi.com) for Translation API Free trial or to buy subscription plans.
+
+    Sample Request with Custom API Key:
+
+    ```
+    curl "https://api.lecto.ai/v1/translate/text" -H 'X-Rapidapi-Key: <Custom API Key>' -H 'Content-Type: application/json' -H 'Accept: application/json' --data-raw '{"texts":["Just try it mate.","What are you waiting for?"],"to":["zh-TW"],"from":"en"}' --compressed
+    ```
+
+    ### RapidAPI Authentication
+
+    RapidAPI API key must be sent as the value of the header `X-Rapidapi-Key`. Furthermore, the Base URL changes to `https://lecto-translation.p.rapidapi.com`. Sign up for a Free Translation API trial for [Lecto Translation API at RapidAPI](https://rapidapi.com/lecto-lecto-default/api/lecto-translation/) to obtain your RapidAPI API Key which is authorized to access the Lecto Translation API.
+
+    Sample Request with RapidAPI API Key:
+
+    ```
+    curl "https://lecto-translation.p.rapidapi.com/v1/translate/text" -H 'X-Rapidapi-Key: <RapidAPI API Key>' -H 'Content-Type: application/json' -H 'Accept: application/json' --data-raw '{"texts":["Just try it mate.","What are you waiting for?"],"to":["zh-TW"],"from":"en"}' --compressed
+    ```
+
+    ## Language List
+    We support more than 90 languages at present as follows. The language codes presented are in `ISO-639-1` format unless stated otherwise below.
+
+    `af` - "Afrikaans"
+    `sq` - "Albanian"
+    `am` - "Amharic"
+    `ar` - "Arabic"
+    `hy` - "Armenian"
+    `az` - "Azerbaijani"
+    `be` - "Belarusian"
+    `bel` - "Belarusian" (ISO-639-2)
+    `bn` - "Bengali"
+    `bs` - "Bosnian"
+    `bg` - "Bulgarian"
+    `ca` - "Catalan"
+    `ceb` - "Cebuano" (ISO-639-2)
+    `zh-CN` - "Chinese (Simplified)" (BCP-47)
+    `zh-TW` - "Chinese (Traditional)" (BCP-47)
+    `hr` - "Croatian"
+    `cs` - "Czech"
+    `da` - "Danish"
+    `nl` - "Dutch"
+    `en` - "English"
+    `et` - "Estonian"
+    `tl` - "Filipino"
+    `fi` - "Finnish"
+    `fr` - "French"
+    `fy` - "Frisian"
+    `gl` - "Galician"
+    `ka` - "Georgian"
+    `de` - "German"
+    `el` - "Greek"
+    `gu` - "Gujarati"
+    `ht` - "Haitian Creole"
+    `ha` - "Hausa"
+    `he` - "Hebrew"
+    `hi` - "Hindi"
+    `hu` - "Hungarian"
+    `is` - "Icelandic"
+    `ig` - "Igbo"
+    `id` - "Indonesian"
+    `ga` - "Irish"
+    `it` - "Italian"
+    `ja` - "Japanese"
+    `kn` - "Kannada"
+    `kk` - "Kazakh"
+    `km` - "Khmer"
+    `ko` - "Korean"
+    `lo` - "Lao"
+    `lv` - "Latvian"
+    `lt` - "Lithuanian"
+    `lb` - "Luxembourgish"
+    `mk` - "Macedonian"
+    `mg` - "Malagasy"
+    `ms` - "Malay"
+    `ml` - "Malayalam"
+    `mr` - "Marathi"
+    `mn` - "Mongolian"
+    `my` - "Myanmar (Burmese)"
+    `ne` - "Nepali"
+    `no` - "Norwegian"
+    `nb` - "Norwegian (BokmÃ¥l)"
+    `or` - "Odia (Oriya)"
+    `ps` - "Pashto"
+    `fa` - "Persian"
+    `pl` - "Polish"
+    `pt` - "Portuguese"
+    `pt-BR` - "Portuguese (Brazil)" (BCP-47)
+    `pt-PT` - "Portuguese (Portugal)" (BCP-47)
+    `pa` - "Punjabi"
+    `ro` - "Romanian"
+    `ru` - "Russian"
+    `gd` - "Scots Gaelic"
+    `sr` - "Serbian"
+    `sd` - "Sindhi"
+    `si` - "Sinhala"
+    `sk` - "Slovak"
+    `sl` - "Slovenian"
+    `so` - "Somali"
+    `es` - "Spanish"
+    `su` - "Sundanese"
+    `sw` - "Swahili"
+    `sv` - "Swedish"
+    `ta` - "Tamil"
+    `th` - "Thai"
+    `tr` - "Turkish"
+    `uk` - "Ukrainian"
+    `ur` - "Urdu"
+    `uz` - "Uzbek"
+    `vi` - "Vietnamese"
+    `cy` - "Welsh"
+    `xh` - "Xhosa"
+    `yi` - "Yiddish"
+    `yo` - "Yoruba"
+    `zu` - "Zulu"
+
+    ## Compression
+    This API supports gzip compressed responses to save bandwidth on your client.  Send the optional `Accept-Encoding: gzip` header to receive gzip compressed responses.
+
+    If this header is sent, then the API response will be gzip compressed and will include the `Content-Encoding: gzip` response header to indicate gzip compression.
+
+    ## Support
+    For personalized integration support or private plans with higher quotas, contact support@lecto.ai or via telegram @lectoai
+  title: Lecto Translation API
+  version: 1.0.0
+paths:
+  /v1/account/info:
+    get:
+      consumes:
+        - application/json
+      description: Get current API account plan, usage and subscription status information.
+      operationId: account_info
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Account Information
+          schema:
+            $ref: '#/definitions/account_info'
+        "400":
+          description: bad request
+          schema:
+            $ref: '#/definitions/error'
+        "401":
+          description: unauthorized
+          schema:
+            $ref: '#/definitions/error'
+        "404":
+          description: not found
+          schema:
+            $ref: '#/definitions/error'
+        "429":
+          description: too many requests
+          schema:
+            $ref: '#/definitions/error'
+      schemes:
+        - https
+      summary: Get Account Information
+      tags:
+        - Account
+  /v1/detect/text:
+    post:
+      consumes:
+        - application/json
+      description: Send source text in request body and receive JSON response with the detected language code.
+      operationId: text_detect_request
+      parameters:
+        - description: text language detection request body
+          in: body
+          name: request
+          required: true
+          schema:
+            $ref: '#/definitions/text_detect_request'
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: text language detection result
+          schema:
+            $ref: '#/definitions/text_detect_response'
+        "400":
+          description: bad request
+          schema:
+            $ref: '#/definitions/error'
+        "401":
+          description: unauthorized
+          schema:
+            $ref: '#/definitions/error'
+        "404":
+          description: not found
+          schema:
+            $ref: '#/definitions/error'
+        "429":
+          description: too many requests
+          schema:
+            $ref: '#/definitions/error'
+      schemes:
+        - https
+      summary: Detects the language for the provided text
+      tags:
+        - Text
+  /v1/translate/json:
+    post:
+      consumes:
+        - application/json
+      description: Send source JSON in request body  and receive JSON response with translations in multiple target languages. JSON values are translated while keys are left unchanged.
+      operationId: json_post_request
+      parameters:
+        - description: json data request body
+          in: body
+          name: request
+          required: true
+          schema:
+            $ref: '#/definitions/json_post_request'
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: json translation result
+          schema:
+            $ref: '#/definitions/json_response'
+        "400":
+          description: bad request
+          schema:
+            $ref: '#/definitions/error'
+        "401":
+          description: unauthorized
+          schema:
+            $ref: '#/definitions/error'
+        "404":
+          description: not found
+          schema:
+            $ref: '#/definitions/error'
+        "429":
+          description: too many requests
+          schema:
+            $ref: '#/definitions/error'
+      schemes:
+        - https
+      summary: Translate JSON payload
+      tags:
+        - JSON
+  /v1/translate/languages:
+    get:
+      consumes:
+        - application/json
+      description: The list of languages returned includes language codes in `ISO 639-1`, `ISO-639-2` or `BCP-47` formats, as well as the human readable names of languages in English.
+      operationId: get_languages
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: list of supported languages
+          schema:
+            $ref: '#/definitions/supported_languages'
+        "400":
+          description: bad request
+          schema:
+            $ref: '#/definitions/error'
+        "401":
+          description: unauthorized
+          schema:
+            $ref: '#/definitions/error'
+        "404":
+          description: not found
+          schema:
+            $ref: '#/definitions/error'
+        "429":
+          description: too many requests
+          schema:
+            $ref: '#/definitions/error'
+      schemes:
+        - https
+      summary: Get list of supported languages
+      tags:
+        - Text
+  /v1/translate/text:
+    post:
+      consumes:
+        - application/json
+      description: Send list of source texts in request body and receive JSON response with translations in multiple target languages.
+      operationId: text_post_request
+      parameters:
+        - description: text data request body
+          in: body
+          name: request
+          required: true
+          schema:
+            $ref: '#/definitions/text_post_request'
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: text translation result
+          schema:
+            $ref: '#/definitions/text_response'
+        "400":
+          description: bad request
+          schema:
+            $ref: '#/definitions/error'
+        "401":
+          description: unauthorized
+          schema:
+            $ref: '#/definitions/error'
+        "404":
+          description: not found
+          schema:
+            $ref: '#/definitions/error'
+        "429":
+          description: too many requests
+          schema:
+            $ref: '#/definitions/error'
+      schemes:
+        - https
+      summary: Translate Text or HTML
+      tags:
+        - Text
+produces:
+  - application/json
+schemes:
+  - https
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: X-API-Key
+    type: apiKey
+swagger: "2.0"
+security:
+  - ApiKeyAuth: []

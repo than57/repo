@@ -18,6 +18,9 @@ items:
       jitsecurity-controls/jit-plans/items/infrastructure/item-container-scan.yml@latest
   - name: Scan your code dependencies for vulnerabilities (SCA)
     uses: jitsecurity-controls/jit-plans/items/code/item-dependency-check.yml@latest
+  - name: Scan Kubernetes configuration files
+    uses: >-
+      jitsecurity-controls/jit-plans/items/infrastructure/item-iac-kubernetes.yml@latest
   - name: Scan your infrastructure-as-code (IaC) for misconfigurations
     uses: >-
       jitsecurity-controls/jit-plans/items/infrastructure/item-iac-misconfiguration-detection.yml@latest
@@ -26,7 +29,7 @@ items:
       jitsecurity-controls/jit-plans/items/infrastructure/item-runtime-misconfiguration-detection-azure.yml@latest
   - name: Scan code for hard-coded secrets
     uses: jitsecurity-controls/jit-plans/items/code/item-secret-detection.yml@latest
-  - name: Scan Kubernetes configuration files
+  - name: Verify that MFA for your GitHub organization is enabled
     uses: >-
-      jitsecurity-controls/jit-plans/items/infrastructure/item-iac-kubernetes.yml@latest
+      jitsecurity-controls/jit-plans/items/third_party_app/item-mfa-scm.yml@latest
 

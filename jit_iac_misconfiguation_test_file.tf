@@ -5,7 +5,7 @@ resource "aws_lb_listener" "listener6" {
     type = "redirect"
     redirect {
       port        = "80"
-      protocol    = "HTTP"
+      protocol    = "HTTPS"
       status_code = "HTTP_301"
     }
   }
